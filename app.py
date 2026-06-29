@@ -67,6 +67,44 @@ def aux_get(path, base):
 # ----------------------------------------------------------------------
 # ANALYSIS (pure: no network) -- the 42 checkpoints
 # ----------------------------------------------------------------------
+# Maps engine check labels to the scan-item ids used by the Vidian Method
+# foundational tool (the 6-group website scan). This lets a live scan drop
+# straight into the existing scan section without re-checking anything.
+# Items not listed (mobile, speed, layout shift, pricing clarity, etc.)
+# are eyeball/performance items the engine can't see, left for manual review.
+LABEL_TO_SID = {
+    "Page title present and descriptive": "title",
+    "Search snippet description set": "meta",
+    "Single clear H1 headline": "h1",
+    "Canonical URL declared": "canonical",
+    "Indexable by search engines": "robots",
+    "XML sitemap published": "sitemap",
+    "Local business schema present": "schema",
+    "Structured data for AI engines (JSON-LD)": "schema",
+    "Phone number readable on page": "nap",
+    "Street address readable on page": "nap",
+    "Google Maps / location linked": "gbp",
+    "Images labeled for context": "alt",
+    "Clear primary call to action": "atf",
+    "Click-to-call phone link": "calltap",
+    "Contact form on site": "form",
+    "Online booking / scheduling": "booking",
+    "Web analytics installed": "events",
+    "Conversion / ad tracking present": "pixel",
+    "Retargeting pixel active": "pixel",
+    "Secure connection (HTTPS)": "ssl",
+    "Reviews / social proof visible": "proof",
+    "Working, current social links": "social",
+    "Footer copyright current": "copyright",
+    "Privacy policy posted": "privacy",
+    "Terms of service posted": "terms",
+    "Cookie consent before tracking": "cookie",
+    "Accessibility baseline (alt text + lang)": "ada",
+    "ARIA accessibility attributes": "ada",
+    "Strict transport security header": "headers",
+}
+
+
 def _check(label, passed, detail=""):
     return {"label": label, "status": "PASS" if passed else "GAP", "detail": detail}
 
@@ -223,7 +261,20 @@ def scan_core(html, final_url, headers=None, robots=None, sitemap=None, llms=Non
         p = sum(1 for c in sec["checks"] if c["status"]=="PASS")
         sec["pass"]=p; sec["total"]=len(sec["checks"]); sec["score"]=round(100*p/len(sec["checks"]))
     tp = sum(s["pass"] for s in S); tt = sum(s["total"] for s in S)
-    return {"url":final_url,"scanned_score":round(100*tp/tt),"pass":tp,"total":tt,"sections":S}
+    # Aggregate every check into the foundational tool's scan-item ids.
+    # A leak is a leak: if any check mapping to an id is a GAP, the id is a gap.
+    scan_map = {}
+    for sec in S:
+        for c in sec["checks"]:
+            sid = LABEL_TO_SID.get(c["label"])
+            if not sid:
+                continue
+            if c["status"] == "GAP":
+                scan_map[sid] = "gap"
+            elif sid not in scan_map:
+                scan_map[sid] = "pass"
+    return {"url":final_url,"scanned_score":round(100*tp/tt),"pass":tp,"total":tt,
+            "sections":S,"scan_map":scan_map}
 
 
 def run_scan(url, use_firecrawl=True):
