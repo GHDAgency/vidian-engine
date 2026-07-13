@@ -102,6 +102,14 @@ LABEL_TO_SID = {
     "Accessibility baseline (alt text + lang)": "ada",
     "ARIA accessibility attributes": "ada",
     "Strict transport security header": "headers",
+    "Organization/entity identity defined": "geo_org",
+    "Linked authoritative profiles (sameAs)": "geo_sameas",
+    "FAQ / Q&A structured content": "geo_faq",
+    "Substantive content for AI to read": "geo_content",
+    "Clear heading structure": "geo_headings",
+    "Semantic page structure": "geo_semantic",
+    "AI crawlers not blocked": "geo_aibots",
+    "AI guidance file (llms.txt)": "geo_llms",
 }
 
 
